@@ -4,7 +4,7 @@ Parameters type and processor for All-to-Pipe.
 Handles generation parameters and sampler configuration.
 """
 
-from typing import Dict, Any
+from typing import Any
 
 
 class Parameters:
@@ -47,7 +47,7 @@ class ParametersProcessor:
     """
 
     @staticmethod
-    def export_sampler_params(parameters: Parameters) -> Dict[str, Any]:
+    def export_sampler_params(parameters: Parameters) -> dict[str, Any]:
         """
         Export parameters as a dictionary ready for KSampler.
 

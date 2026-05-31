@@ -4,7 +4,7 @@ All-to-Pipe template node.
 Assigns and validates template strings for dynamic prompt parsing.
 """
 
-from typing import Dict, Any, Tuple, Optional
+from typing import Any
 from ..alltopipe_types import (
     Pipe,
     # PositivePrompt,
@@ -33,7 +33,7 @@ class TemplateNode:
         pass
 
     @classmethod
-    def INPUT_TYPES(cls) -> Dict[str, Any]:
+    def INPUT_TYPES(cls) -> dict[str, Any]:
         """
         Define the input types for this node.
 
@@ -57,8 +57,8 @@ class TemplateNode:
             },
         }
 
-    RETURN_TYPES: Tuple[str, ...] = ("PIPE", "STRING")
-    RETURN_NAMES: Tuple[str, ...] = ("pipe", "parsed_template")
+    RETURN_TYPES: tuple[str, ...] = ("PIPE", "STRING")
+    RETURN_NAMES: tuple[str, ...] = ("pipe", "parsed_template")
     FUNCTION: str = "execute"
     CATEGORY: str = "all-to-pipe"
 
@@ -67,8 +67,8 @@ class TemplateNode:
         template_type: str,
         template_text: str,
         allow_missing: bool,
-        pipe: Optional[Pipe] = None,
-    ) -> Tuple[Pipe, str]:
+        pipe: Pipe | None = None,
+    ) -> tuple[Pipe, str]:
         """
         Execute the node and assign template to pipe.
 

@@ -4,13 +4,13 @@ All-to-Pipe pipe node.
 Creates an empty Pipe object as the entry point of the pipeline.
 """
 
-from typing import Dict, Any, Tuple, Optional
+from typing import Any
 from ..alltopipe_types import Pipe
 from ..alltopipe_types import ImageConfig
 
 
 class UpdatePipeNode:
-    elements_to_update: Dict[str, Dict[str, Any]] = {
+    elements_to_update: dict[str, dict[str, Any]] = {
         "image": {
             "class": ImageConfig,
             "attr_name": "image",  # The attribute inside ImageConfig
@@ -24,7 +24,7 @@ class UpdatePipeNode:
         pass
 
     @staticmethod
-    def execute(key: str, value: Any, pipe: Optional[Pipe] = None) -> Tuple[Pipe]:
+    def execute(key: str, value: Any, pipe: Pipe | None = None) -> tuple[Pipe]:
         new_pipe = pipe.clone() if pipe is not None else Pipe()
 
         element = UpdatePipeNode.elements_to_update[key]
@@ -55,7 +55,7 @@ class UpdatePipeNode:
         return (new_pipe,)
 
     @classmethod
-    def INPUT_TYPES(cls) -> Dict[str, Any]:
+    def INPUT_TYPES(cls) -> dict[str, Any]:
         return {
             "optional": {
                 "pipe": ("PIPE",),
@@ -63,7 +63,7 @@ class UpdatePipeNode:
             "required": {"key": (list(cls.elements_to_update.keys()),), "value": "*"},
         }
 
-    RETURN_TYPES: Tuple[str, ...] = ("PIPE",)
-    RETURN_NAMES: Tuple[str, ...] = ("pipe",)
+    RETURN_TYPES: tuple[str, ...] = ("PIPE",)
+    RETURN_NAMES: tuple[str, ...] = ("pipe",)
     FUNCTION: str = "execute"
     CATEGORY: str = "all-to-pipe"

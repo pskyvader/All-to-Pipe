@@ -4,7 +4,6 @@ All-to-Pipe utils module.
 Utility functions for common operations across nodes.
 """
 
-from typing import Optional, List
 import copy
 from ..alltopipe_types import (
     Pipe,
@@ -35,7 +34,7 @@ def deep_copy_pipe(pipe: Pipe | None) -> Pipe:
         raise ValueError("Cannot copy None pipe")
 
     # Deep copy model
-    new_model: Optional[Model] = None
+    new_model: Model | None = None
     if pipe.model is not None:
         new_model = Model(
             name=pipe.model.name,
@@ -44,7 +43,7 @@ def deep_copy_pipe(pipe: Pipe | None) -> Pipe:
         )
 
     # Deep copy loras list
-    new_loras: List[LoraSpec] = []
+    new_loras: list[LoraSpec] = []
     if pipe.loras:
         for lora in pipe.loras:
             new_lora: LoraSpec = LoraSpec(

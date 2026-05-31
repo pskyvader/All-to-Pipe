@@ -4,8 +4,9 @@ All-to-Pipe negative prompt node.
 Populates the negative prompt container.
 """
 
-from typing import Dict, Any, Tuple, Optional
+from typing import Any
 from ..alltopipe_types import Pipe, NegativePrompt
+
 # from ..common.utils import deep_copy_pipe
 
 
@@ -22,7 +23,7 @@ class NegativePromptNode:
         pass
 
     @classmethod
-    def INPUT_TYPES(cls) -> Dict[str, Any]:
+    def INPUT_TYPES(cls) -> dict[str, Any]:
         """
         Define the input types for this node.
 
@@ -36,15 +37,20 @@ class NegativePromptNode:
             "required": {
                 "feature": (NegativePrompt.ALLOWED_FEATURES,),
                 "text": ("STRING", {"multiline": True, "default": ""}),
-            }
+            },
         }
 
-    RETURN_TYPES: Tuple[str, ...] = ("PIPE",)
-    RETURN_NAMES: Tuple[str, ...] = ("pipe",)
+    RETURN_TYPES: tuple[str, ...] = ("PIPE",)
+    RETURN_NAMES: tuple[str, ...] = ("pipe",)
     FUNCTION: str = "execute"
     CATEGORY: str = "all-to-pipe"
 
-    def execute(self, pipe: Optional[Pipe] = None, feature: str = None, text: str = None) -> Tuple[Pipe]:
+    def execute(
+        self,
+        pipe: Pipe | None = None,
+        feature: str | None = None,
+        text: str | None = None,
+    ) -> tuple[Pipe]:
         """
         Execute the node and populate negative prompts.
 
@@ -59,6 +65,11 @@ class NegativePromptNode:
         Raises:
             ValueError: If feature is not allowed
         """
+        if feature is None:
+            raise ValueError("feature parameter is required")
+        if text is None:
+            raise ValueError("text parameter is required")
+
         # new_pipe: Pipe = deep_copy_pipe(pipe) if pipe is not None else Pipe()
         new_pipe: Pipe = pipe.clone() if pipe is not None else Pipe()
 

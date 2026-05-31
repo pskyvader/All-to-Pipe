@@ -4,7 +4,7 @@ Companion file loader for All-to-Pipe.
 Loads and manages JSON companion files for models and LoRAs.
 """
 
-from typing import Optional, Dict, Any, List, Union, Tuple
+from typing import Any
 import json
 import os
 import random
@@ -28,11 +28,11 @@ class CompanionFile:
     Provides metadata, limits, and prompt suggestions.
     """
 
-    sampler: List[str] = field(default_factory=list)
+    sampler: list[str] = field(default_factory=list)
     """List of samplers. Single value means select one from list."""
-    scheduler: List[str] = field(default_factory=list)
+    scheduler: list[str] = field(default_factory=list)
 
-    steps: List[int] = field(default_factory=list)
+    steps: list[int] = field(default_factory=list)
     """
     Steps configuration:
     - len=1: use that specific value
@@ -40,22 +40,22 @@ class CompanionFile:
     - len>2: choose one from list
     """
 
-    resolution: List[int] = field(default_factory=list)
+    resolution: list[int] = field(default_factory=list)
     """List of valid [width, height] pairs."""
 
-    cfg: List[float] = field(default_factory=list)
+    cfg: list[float] = field(default_factory=list)
     """Cfg configuration (same as steps)."""
 
-    negative_prompt: List[str] = field(default_factory=list)
+    negative_prompt: list[str] = field(default_factory=list)
     """List of negative prompts to randomly select from."""
 
-    positive_prompt: List[str] = field(default_factory=list)
+    positive_prompt: list[str] = field(default_factory=list)
     """List of positive prompts to randomly select from."""
 
-    raw_data: Dict[str, Any] = field(default_factory=dict)
+    raw_data: dict[str, Any] = field(default_factory=dict)
     """Raw dictionary data from JSON file."""
 
-    clip_skip: List[int] = field(default_factory=list)
+    clip_skip: list[int] = field(default_factory=list)
     """List of clip skip values to randomly select from."""
 
 
@@ -100,7 +100,7 @@ class CompanionLoader:
         lora_name: str,
         subfolder: str,
         base_path: str = "models/loras",
-    ) -> Optional[CompanionFile]:
+    ) -> CompanionFile | None:
         """
         Load companion JSON file for a LoRA.
 
@@ -129,7 +129,7 @@ class CompanionLoader:
         name: str,
         subfolder: str,
         base_path: str,
-    ) -> Optional[CompanionFile]:
+    ) -> CompanionFile | None:
         """
         Internal method to load companion JSON file.
 
@@ -159,12 +159,12 @@ class CompanionLoader:
 
         try:
             with open(json_path, "r", encoding="utf-8") as f:
-                data: Dict[str, Any] = json.load(f)
+                data: dict[str, Any] = json.load(f)
 
             # Parse JSON into CompanionFile
             return CompanionLoader._parse_companion_data(data)
 
-        except (json.JSONDecodeError, IOError, OSError) as e:
+        except (json.JSONDecodeError, IOError, OSError):
             # Log error silently, return None
             return None
 
@@ -247,7 +247,7 @@ class CompanionLoader:
             Tuple of (new_width, new_height, new_batch_size)
         """
         # Process resolution pairs
-        resolutions: List[Tuple[int, int]] = []
+        resolutions: list[tuple[int, int]] = []
         for res in companion.resolution:
             if isinstance(res, list) and len(res) == 2:
                 resolutions.append((int(res[0]), int(res[1])))
@@ -286,7 +286,7 @@ class CompanionLoader:
         companion: CompanionFile,
         positive_prompt: str | None,
         negative_prompt: str | None,
-    ) -> Tuple[str, str]:
+    ) -> tuple[str, str]:
         """
         Apply companion prompt suggestions to prompts intelligently.
 
@@ -326,21 +326,21 @@ class CompanionLoader:
         """
         Apply companion to model, if applicable."""
 
-        clip_skip = abs(model.clip_skip)
+        clip_skip = -abs(model.clip_skip)
         if companion.clip_skip:
             clip_skip = int(
                 CompanionLoader._apply_numeric_value(
                     companion.clip_skip, clip_skip, "clip_skip"
                 )
             )
-        model.clip_skip = -abs(clip_skip)
+        model.clip_skip = clip_skip
         return model
 
     # ======================== Helper Methods ========================
 
     @staticmethod
     def _apply_numeric_value(
-        values: List[int] | List[float],
+        values: list[int] | list[float],
         current: int | float,
         param_name: str,
     ) -> int | float:
@@ -390,7 +390,7 @@ class CompanionLoader:
 
     @staticmethod
     def _apply_choice_value(
-        options: List[Any],
+        options: list[Any],
         current: Any,
         param_name: str,
     ) -> Any:
@@ -418,7 +418,7 @@ class CompanionLoader:
 
     @staticmethod
     def apply_text_suggestions(
-        suggestions: List[str],
+        suggestions: list[str],
         current: str | None,
         param_name: str,
     ) -> str:
@@ -432,7 +432,7 @@ class CompanionLoader:
         if not suggestions:
             return current
         # Flatten suggestions into list of terms
-        all_terms: List[str] = []
+        all_terms: list[str] = []
         for suggestion in suggestions:
             terms = [t.strip() for t in suggestion.split(",") if t.strip()]
             all_terms.extend(terms)
@@ -445,7 +445,7 @@ class CompanionLoader:
         return current
 
     @staticmethod
-    def _parse_resolution_string(res_str: str) -> Optional[tuple[int, int]]:
+    def _parse_resolution_string(res_str: str) -> tuple[int, int] | None:
         """
         Parse resolution string formats like "1024x768", "1024,768", "1024 x 768".
 
@@ -469,7 +469,7 @@ class CompanionLoader:
         return None
 
     @staticmethod
-    def _parse_companion_data(data: Dict[str, Any]) -> CompanionFile:
+    def _parse_companion_data(data: dict[str, Any]) -> CompanionFile:
         """
         Parse raw JSON data into CompanionFile.
 
@@ -541,5 +541,7 @@ class CompanionLoader:
             companion.clip_skip = (
                 clip_skip_data if isinstance(clip_skip_data, list) else [clip_skip_data]
             )
+            # Ensure all clip_skip values are negative
+            companion.clip_skip = [-abs(int(cs)) for cs in companion.clip_skip]
 
         return companion

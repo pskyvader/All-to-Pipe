@@ -5,10 +5,12 @@ Adds one LoRA specification to the Pipe with companion file loading and paramete
 """
 
 import logging
-from typing import Dict, Any, Tuple, List, Set
+from typing import Any
 import os
 import random
 from torch import Tensor
+
+from custom_nodes.all_to_pipe.common.companion_loader import CompanionFile
 from ..alltopipe_types import (
     Pipe,
     LoraSpec,
@@ -16,6 +18,7 @@ from ..alltopipe_types import (
     NegativePrompt,
     LoraProcessor,
     ModelProcessor,
+    TemplateParser,
 )
 
 # from ..common.utils import deep_copy_pipe
@@ -64,34 +67,13 @@ class LoraNode:
         pass
 
     @staticmethod
-    def execute(
-        pipe: Pipe | None = None,
-        lora_selection: str = "",
-        weight: float = 1.0,
-        clip_weight: float = 1.0,
-        load_companion: bool = False,
-        random_subfolder: str = "all",
-    ) -> tuple[Pipe]:
-        """
-        Execute the node and add a LoRA specification to the pipe.
-
-        Args:
-            pipe: Optional Pipe instance (creates new if None)
-            lora_selection: LoRA selection (either "RANDOM /" or "subfolder/lora_name.ext")
-            weight: Model weight strength (overridden by companion file if present)
-            clip_weight: CLIP weight strength (overridden by companion file if present)
-            load_companion: Whether to load weights from companion file
-            random_subfolder: Subfolder to randomly select from when "RANDOM /" is chosen
-
-        Returns:
-            Tuple containing the modified Pipe instance
-        """
-        # new_pipe: Pipe = deep_copy_pipe(pipe) if pipe is not None else Pipe()
-        new_pipe: Pipe = pipe.clone() if pipe is not None else Pipe()
-
-        if not new_pipe.model:
-            raise ValueError("Pipe Needs a model before applying loras")
-
+    def get_lora(
+        lora_selection: str,
+        weight: float,
+        clip_weight: float,
+        random_subfolder: str,
+    ) -> LoraSpec:
+        """Get a LoRA specification based on the selection and options."""
         # Handle RANDOM selection
         if lora_selection == "RANDOM /":
             # Get LoRAs from specified subfolder or all subfolders
@@ -140,18 +122,66 @@ class LoraNode:
             weight=weight,
             clip_weight=clip_weight,
         )
-        lora_weights: Dict[str, Tensor] = LoraProcessor.load_lora(lora_spec)
-        (model, _, _) = ModelProcessor.load_model(new_pipe.model)
+        return lora_spec
 
+    @staticmethod
+    def execute(
+        pipe: Pipe | None = None,
+        lora_selection: str = "",
+        weight: float = 1.0,
+        clip_weight: float = 1.0,
+        load_companion: bool = False,
+        append_lora: bool = True,
+        random_subfolder: str = "all",
+    ) -> tuple[Pipe]:
+        """
+        Execute the node and add a LoRA specification to the pipe.
+
+        Args:
+            pipe: Optional Pipe instance (creates new if None)
+            lora_selection: LoRA selection (either "RANDOM /" or "subfolder/lora_name.ext")
+            weight: Model weight strength (overridden by companion file if present)
+            clip_weight: CLIP weight strength (overridden by companion file if present)
+            load_companion: Whether to load weights from companion file
+            random_subfolder: Subfolder to randomly select from when "RANDOM /" is chosen
+
+        Returns:
+            Tuple containing the modified Pipe instance
+        """
+        # new_pipe: Pipe = deep_copy_pipe(pipe) if pipe is not None else Pipe()
+        new_pipe: Pipe = pipe.clone() if pipe is not None else Pipe()
+
+        if not new_pipe.model:
+            raise ValueError("Pipe Needs a model before applying loras")
+
+        (model, _, _) = ModelProcessor.load_model(new_pipe.model)
         model_keys: set[str] = LoraProcessor.get_model_key_set(model)
-        if not LoraProcessor.is_lora_compatible(lora_weights, model_keys, lora_spec):
+
+        retries = 0
+        compatible = False
+        lora_spec = LoraSpec(
+            name="", subfolder="", weight=weight, clip_weight=clip_weight
+        )  # Placeholder initialization
+        while retries < 3 and not compatible:
+            lora_spec: LoraSpec = LoraNode.get_lora(
+                lora_selection, weight, clip_weight, random_subfolder
+            )
+            lora_weights: dict[str, Tensor] = LoraProcessor.load_lora(lora_spec)
+            compatible: bool = LoraProcessor.is_lora_compatible(
+                lora_weights, model_keys, lora_spec
+            )
+            if lora_selection != "RANDOM /":
+                break  # Don't retry if user specified a specific LoRA
+            retries += 1
+
+        if not compatible:
             message: str = f"Architecture Mismatch: Skipping {lora_spec.name}"
             logger.warning(message)
-            raise Exception(message)
+            # raise Exception(message)
             return (new_pipe,)
 
-        companion = (
-            CompanionLoader.load_lora_companion(lora_name, lora_subfolder)
+        companion: CompanionFile | None = (
+            CompanionLoader.load_lora_companion(lora_spec.name, lora_spec.subfolder)
             if load_companion
             else None
         )
@@ -161,14 +191,22 @@ class LoraNode:
 
         if companion is not None and hasattr(companion, "raw_data"):
             # Try to load weights from companion file
-            weight_data: List[float] = companion.raw_data.get("weight", [])
+            weight_data: list[float] = companion.raw_data.get("weight", [])
             if len(weight_data) > 0:
                 if len(weight_data) == 1:
                     final_weight = final_clip_weight = float(weight_data[0])
                 elif len(weight_data) == 2:
-                    final_weight = random.uniform(min(weight_data), max(weight_data))
+                    # check if weight is within range
+                    if final_weight < min(weight_data) or final_weight > max(
+                        weight_data
+                    ):
+                        final_weight = random.uniform(
+                            min(weight_data), max(weight_data)
+                        )
                 else:
-                    final_weight = random.choice(weight_data)
+                    # check if weight is a valid choice
+                    if final_weight not in weight_data:
+                        final_weight = random.choice(weight_data)
                 final_clip_weight = final_weight
 
         # Clamp weights to valid range
@@ -183,7 +221,7 @@ class LoraNode:
 
         if companion is not None:
             # Store companion file data if not already stored (LoRA takes priority over model)
-            if new_pipe.companion_lora_data is None:
+            if new_pipe.companion_lora_data is None or not append_lora:
                 new_pipe.companion_lora_data = []
             new_pipe.companion_lora_data.append(companion.raw_data)
 
@@ -192,17 +230,21 @@ class LoraNode:
                     new_pipe.positive_prompt = PositivePrompt()
                 new_pipe.positive_prompt.lora = CompanionLoader.apply_text_suggestions(
                     companion.positive_prompt,
-                    new_pipe.positive_prompt.lora,
+                    new_pipe.positive_prompt.lora if append_lora else "",
                     "Positive Prompts",
                 )
+                if new_pipe.positive_template:
+                    new_pipe.positive_template.parsed_template = None
             if companion.negative_prompt:
                 if new_pipe.negative_prompt is None:
                     new_pipe.negative_prompt = NegativePrompt()
                 new_pipe.negative_prompt.lora = CompanionLoader.apply_text_suggestions(
                     companion.negative_prompt,
-                    new_pipe.negative_prompt.lora,
+                    new_pipe.negative_prompt.lora if append_lora else "",
                     "Negative Prompts",
                 )
+                if new_pipe.negative_template:
+                    new_pipe.negative_template.parsed_template = None
 
             if new_pipe.parameters:
                 new_pipe.parameters = CompanionLoader.apply_companion_to_parameters(
@@ -216,12 +258,14 @@ class LoraNode:
                 new_pipe.model = CompanionLoader.apply_companion_to_model(
                     companion, new_pipe.model
                 )
+        if not append_lora:
+            new_pipe.loras = []
         new_pipe.loras.append(lora_spec)
 
         return (new_pipe,)
 
     @staticmethod
-    def _get_all_loras(base_path: str = "models/loras") -> List[str]:
+    def _get_all_loras(base_path: str = "models/loras") -> list[str]:
         """
         Recursively discover all LoRAs in all subfolders.
 
@@ -231,8 +275,8 @@ class LoraNode:
         Returns:
             List of LoRA paths in format "subfolder/lora_name.ext" or "lora_name.ext"
         """
-        loras: List[str] = []
-        lora_extensions: Tuple[str, ...] = (".safetensors", ".ckpt", ".pt", ".pth")
+        loras: list[str] = []
+        lora_extensions: tuple[str, ...] = (".safetensors", ".ckpt", ".pt", ".pth")
 
         if not os.path.isdir(base_path):
             return loras
@@ -256,7 +300,7 @@ class LoraNode:
         return loras
 
     @staticmethod
-    def _get_lora_subfolders(base_path: str = "models/loras") -> List[str]:
+    def _get_lora_subfolders(base_path: str = "models/loras") -> list[str]:
         """
         Get all available LoRA subfolders.
 
@@ -266,7 +310,7 @@ class LoraNode:
         Returns:
             List of subfolder names
         """
-        subfolders: List[str] = ["all"]  # Include "all" option
+        subfolders: list[str] = ["all"]  # Include "all" option
 
         if not os.path.isdir(base_path):
             return subfolders
@@ -283,7 +327,7 @@ class LoraNode:
         return subfolders
 
     @classmethod
-    def INPUT_TYPES(cls) -> Dict[str, Any]:
+    def INPUT_TYPES(cls) -> dict[str, Any]:
         """
         Define the input types for this node with improved selectors.
 
@@ -312,13 +356,14 @@ class LoraNode:
                 ),
                 "weight": (
                     "FLOAT",
-                    {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01},
+                    {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.1},
                 ),
                 "clip_weight": (
                     "FLOAT",
-                    {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01},
+                    {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.1},
                 ),
-                "load_companion": ("BOOLEAN", {"default": True}),
+                "load_companion": ("BOOLEAN", {"default": False}),
+                "append_lora": ("BOOLEAN", {"default": True}),
                 "random_subfolder": (
                     (lora_subfolders,)
                     if lora_subfolders
@@ -327,7 +372,7 @@ class LoraNode:
             },
         }
 
-    RETURN_TYPES: Tuple[str, ...] = ("PIPE",)
-    RETURN_NAMES: Tuple[str, ...] = ("pipe",)
+    RETURN_TYPES: tuple[str, ...] = ("PIPE",)
+    RETURN_NAMES: tuple[str, ...] = ("pipe",)
     FUNCTION: str = "execute"
     CATEGORY: str = "all-to-pipe"

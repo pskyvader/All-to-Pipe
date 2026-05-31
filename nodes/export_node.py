@@ -4,7 +4,7 @@ All-to-Pipe export node.
 Resolves Pipe into sampler-ready objects.
 """
 
-from typing import Dict, Any, Tuple
+from typing import Any
 from ..alltopipe_types import (
     Pipe,
     Model,
@@ -57,7 +57,7 @@ class ExportNode:
         pass
 
     @staticmethod
-    def execute(pipe: Pipe) -> Tuple[Any, ...]:
+    def execute(pipe: Pipe) -> tuple[Any, ...]:
         """
         Execute the node and resolve pipe into sampler-ready objects.
 
@@ -152,7 +152,7 @@ class ExportNode:
             )
         image = pipe.image_config.image
 
-        if not isinstance(pipe.image_config.latent, Dict):
+        if not isinstance(pipe.image_config.latent, dict):
             pipe.image_config.latent = {"samples": vae.encode(image[:, :, :, :3])}
 
         latent_image = pipe.image_config.latent
@@ -183,7 +183,7 @@ class ExportNode:
         )
 
     @classmethod
-    def INPUT_TYPES(cls) -> Dict[str, Any]:
+    def INPUT_TYPES(cls) -> dict[str, Any]:
         """
         Define the input types for this node.
 
@@ -196,7 +196,7 @@ class ExportNode:
             }
         }
 
-    RETURN_TYPES: Tuple[Any, ...] = (
+    RETURN_TYPES: tuple[Any, ...] = (
         "PIPE",
         "MODEL",
         "VAE",
@@ -212,7 +212,7 @@ class ExportNode:
         SCHEDULER_NAMES,
         "FLOAT",
     )
-    RETURN_NAMES: Tuple[str, ...] = (
+    RETURN_NAMES: tuple[str, ...] = (
         "Pipe",
         "model",
         "vae",

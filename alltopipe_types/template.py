@@ -5,15 +5,15 @@ System for parsing text templates with variable substitution from prompt objects
 """
 
 import re
-from typing import Optional, List, Dict, Any, Set
-from ..alltopipe_types import PositivePrompt, NegativePrompt
+from typing import Any
+from .prompts import PositivePrompt, NegativePrompt
 
 
 class Template:
     def __init__(
         self,
         template_type: str,
-        placeholders: List[str],
+        placeholders: list[str],
         text: str,
         allow_missing: bool,
     ) -> None:
@@ -26,10 +26,10 @@ class Template:
             raise ValueError("template_text cannot be empty")
 
         self.type: str = template_type
-        self.placeholders: List[str] = placeholders
+        self.placeholders: list[str] = placeholders
         self.text: str = text
         self.allow_missing: bool = allow_missing
-        self.parsed_template: Optional[str] = None
+        self.parsed_template: str | None = None
 
 
 class TemplateParser:
@@ -47,7 +47,7 @@ class TemplateParser:
     PLACEHOLDER_PATTERN = re.compile(r"<([^>]+)>")
 
     @staticmethod
-    def find_placeholders(template: str) -> List[str]:
+    def find_placeholders(template: str) -> list[str]:
         """
         Find all placeholders in a template string.
 
@@ -80,38 +80,11 @@ class TemplateParser:
 
         Args:
             template: Template string with <variable> placeholders
-            positive_prompt: PositivePrompt instance with substitution values
-            negative_prompt: Optional NegativePrompt instance
-            allow_missing: If True, replace missing with default_value. If False, raise error.
-            default_value: String to use for missing variables (default: "[MISSING]")
+            prompt_map: PositivePrompt or NegativePrompt instance with substitution values
+            allow_missing: If True, replace missing values with empty string. If False, use placeholder.
 
         Returns:
             Parsed template string with all variables substituted
-
-        Raises:
-            ValueError: If allow_missing=False and a variable is not found
-
-        Example:
-            >>> pos = PositivePrompt()
-            >>> pos.age = "young"
-            >>> TemplateParser.parse_template("A <age> person", pos)
-            'A young person'
-        Parses a template string with variable substitution from prompt objects.
-
-        Replaces <variable> placeholders with values from prompt attributes.
-
-        Args:
-            template: Template string with <variable> placeholders
-            positive_prompt: PositivePrompt instance with substitution values
-            negative_prompt: Optional NegativePrompt instance
-            allow_missing: If True, replace missing with default_value. If False, raise error.
-            default_value: String to use for missing variables (default: "[MISSING]")
-
-        Returns:
-            Parsed template string with all variables substituted
-
-        Raises:
-            ValueError: If allow_missing=False and a variable is not found
 
         Example:
             >>> pos = PositivePrompt()
@@ -125,7 +98,7 @@ class TemplateParser:
 
         for placeholder in placeholders:
             # Try to get from positive prompt first
-            value: Optional[str] = None
+            value: str | None = None
 
             if hasattr(prompt_map, placeholder):
                 value = getattr(prompt_map, placeholder)

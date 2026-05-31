@@ -4,7 +4,7 @@ All-to-Pipe parameters builder node.
 Builds and attaches sampler parameters to the Pipe.
 """
 
-from typing import Dict, Any, Tuple, Optional
+from typing import Any
 import random
 from ..alltopipe_types import Pipe, Parameters
 
@@ -37,7 +37,7 @@ class ParametersBuilderNode:
 
     @staticmethod
     def execute(
-        pipe: Optional[Pipe] = None,
+        pipe: Pipe | None = None,
         steps: int = 20,
         cfg: float = 7.0,
         sampler: str = "euler",
@@ -90,7 +90,7 @@ class ParametersBuilderNode:
         return (new_pipe,)
 
     @classmethod
-    def INPUT_TYPES(cls) -> Dict[str, Any]:
+    def INPUT_TYPES(cls) -> dict[str, Any]:
         """
         Define the input types for this node with dynamic selectors.
 
@@ -121,7 +121,7 @@ class ParametersBuilderNode:
             },
         }
 
-    RETURN_TYPES: Tuple[str, ...] = ("PIPE",)
-    RETURN_NAMES: Tuple[str, ...] = ("pipe",)
+    RETURN_TYPES: tuple[str, ...] = ("PIPE",)
+    RETURN_NAMES: tuple[str, ...] = ("pipe",)
     FUNCTION: str = "execute"
     CATEGORY: str = "all-to-pipe"

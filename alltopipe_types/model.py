@@ -1,5 +1,4 @@
 import os
-from typing import Tuple, Optional
 import folder_paths
 import comfy.sd
 import comfy.model_patcher
@@ -22,11 +21,9 @@ class ModelProcessor:
     ) -> tuple[comfy.model_patcher.ModelPatcher, comfy.sd.CLIP, comfy.sd.VAE]:
         if not model or not model.name:
             raise ValueError("Model name is required and cannot be empty")
-        output_model: comfy.model_patcher.ModelPatcher
-        clip: comfy.sd.CLIP
-        vae: comfy.sd.VAE
+
         if model.cached_model is not None:
-            (output_model, clip, vae) = model.cached_model
+            return model.cached_model
 
         target_path = os.path.join(model.subfolder, model.name)
         ckpt_path = folder_paths.get_full_path("checkpoints", target_path)
@@ -47,12 +44,12 @@ class ModelProcessor:
 
         if model.clip_skip < 0:
             if model.clip_skip != -1:
-                clip: comfy.sd.CLIP = clip.clone()
+                clip = clip.clone()
                 clip.clip_layer(model.clip_skip)
                 if hasattr(clip.cond_stage_model, "clip_layer"):
                     clip.cond_stage_model.set_clip_options({"layer": model.clip_skip})
-
         else:
             raise ValueError(f"Invalid clip_skip value: {model.clip_skip}")
 
+        model.cached_model = (output_model, clip, vae)
         return (output_model, clip, vae)

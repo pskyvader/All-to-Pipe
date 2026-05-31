@@ -4,16 +4,17 @@ All-to-Pipe model node.
 Assigns a model to an existing Pipe with companion file loading and parameter adjustment.
 """
 
-from typing import Dict, Any, Tuple, Optional, List
+from typing import Any
 import os
 import random
+
+from custom_nodes.all_to_pipe.common.companion_loader import CompanionFile
 from ..alltopipe_types import (
     Pipe,
     Model,
     PositivePrompt,
     NegativePrompt,
     ModelProcessor,
-    ImageConfigProcessor,
 )
 
 # from ..common.utils import deep_copy_pipe
@@ -41,12 +42,12 @@ class ModelNode:
 
     @staticmethod
     def execute(
-        pipe: Optional[Pipe] = None,
+        pipe: Pipe | None = None,
         model_selection: str = "",
         load_companion: bool = False,
         random_subfolder: str = "all",
         clip_skip: int = -1,
-    ) -> Tuple[Pipe]:
+    ) -> tuple[Pipe]:
         """
         Execute the node and assign a model to the pipe.
 
@@ -113,7 +114,7 @@ class ModelNode:
         )
         new_pipe.model.cached_model = ModelProcessor.load_model(new_pipe.model)
 
-        companion = (
+        companion: CompanionFile | None = (
             CompanionLoader.load_model_companion(model_name, model_subfolder)
             if load_companion
             else None
@@ -128,17 +129,22 @@ class ModelNode:
                     new_pipe.positive_prompt = PositivePrompt()
                 new_pipe.positive_prompt.model = CompanionLoader.apply_text_suggestions(
                     companion.positive_prompt,
-                    new_pipe.positive_prompt.model,
+                    "",
                     "Positive Prompts",
                 )
+                if new_pipe.positive_template:
+                    new_pipe.positive_template.parsed_template = None
+
             if companion.negative_prompt:
                 if new_pipe.negative_prompt is None:
                     new_pipe.negative_prompt = NegativePrompt()
                 new_pipe.negative_prompt.model = CompanionLoader.apply_text_suggestions(
                     companion.negative_prompt,
-                    new_pipe.negative_prompt.model,
+                    "",
                     "Negative Prompts",
                 )
+                if new_pipe.negative_template:
+                    new_pipe.negative_template.parsed_template = None
 
             if new_pipe.parameters:
                 new_pipe.parameters = CompanionLoader.apply_companion_to_parameters(
@@ -162,7 +168,9 @@ class ModelNode:
                 new_pipe.image_config = image_config
 
             if companion.clip_skip:
-                print(f"companion model applying clip skip:{companion.clip_skip} , to model:{new_pipe.model.name}")
+                print(
+                    f"companion model applying clip skip:{companion.clip_skip} , to model:{new_pipe.model.name}"
+                )
                 new_pipe.model = CompanionLoader.apply_companion_to_model(
                     companion, new_pipe.model
                 )
@@ -170,7 +178,7 @@ class ModelNode:
         return (new_pipe,)
 
     @staticmethod
-    def _get_all_models(base_path: str = "models/checkpoints") -> List[str]:
+    def _get_all_models(base_path: str = "models/checkpoints") -> list[str]:
         """
         Recursively discover all models in all subfolders.
 
@@ -180,8 +188,8 @@ class ModelNode:
         Returns:
             List of model paths in format "subfolder/model_name.ext" or "model_name.ext"
         """
-        models: List[str] = []
-        model_extensions: Tuple[str, ...] = (".safetensors", ".ckpt", ".pt", ".pth")
+        models: list[str] = []
+        model_extensions: tuple[str, ...] = (".safetensors", ".ckpt", ".pt", ".pth")
 
         if not os.path.isdir(base_path):
             return models
@@ -205,7 +213,7 @@ class ModelNode:
         return models
 
     @staticmethod
-    def _get_model_subfolders(base_path: str = "models/checkpoints") -> List[str]:
+    def _get_model_subfolders(base_path: str = "models/checkpoints") -> list[str]:
         """
         Get all available model subfolders.
 
@@ -215,7 +223,7 @@ class ModelNode:
         Returns:
             List of subfolder names
         """
-        subfolders: List[str] = ["all"]  # Include "all" option
+        subfolders: list[str] = ["all"]  # Include "all" option
 
         if not os.path.isdir(base_path):
             return subfolders
@@ -232,7 +240,7 @@ class ModelNode:
         return subfolders
 
     @classmethod
-    def INPUT_TYPES(cls) -> Dict[str, Any]:
+    def INPUT_TYPES(cls) -> dict[str, Any]:
         """
         Define the input types for this node with improved selectors.
 
@@ -272,7 +280,7 @@ class ModelNode:
             },
         }
 
-    RETURN_TYPES: Tuple[str, ...] = ("PIPE",)
-    RETURN_NAMES: Tuple[str, ...] = ("pipe",)
+    RETURN_TYPES: tuple[str, ...] = ("PIPE",)
+    RETURN_NAMES: tuple[str, ...] = ("pipe",)
     FUNCTION: str = "execute"
     CATEGORY: str = "all-to-pipe"

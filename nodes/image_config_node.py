@@ -4,7 +4,7 @@ All-to-Pipe image config node.
 Sets image dimensions, batch size, and noise parameters.
 """
 
-from typing import Dict, Any, Tuple, Optional
+from typing import Any
 from ..alltopipe_types import Pipe, ImageConfig, ImageConfigProcessor
 from ..common.utils import deep_copy_pipe
 
@@ -22,13 +22,13 @@ class ImageConfigNode:
 
     @staticmethod
     def execute(
-        pipe: Optional[Pipe] = None,
+        pipe: Pipe | None = None,
         width: int = 512,
         height: int = 512,
         batch_size: int = 1,
         noise: float = 1.0,
         color_code: str = "",
-    ) -> Tuple[Pipe]:
+    ) -> tuple[Pipe]:
         """
         Execute the node and set image configuration in the pipe.
 
@@ -48,7 +48,7 @@ class ImageConfigNode:
         new_pipe: Pipe = pipe.clone() if pipe is not None else Pipe()
 
         # Create and attach image config
-        color: Optional[str] = color_code if color_code.strip() else None
+        color: str | None = color_code if color_code.strip() else None
         image_config: ImageConfig = ImageConfig(
             width=width,
             height=height,
@@ -70,7 +70,7 @@ class ImageConfigNode:
         return (new_pipe,)
 
     @classmethod
-    def INPUT_TYPES(cls) -> Dict[str, Any]:
+    def INPUT_TYPES(cls) -> dict[str, Any]:
         """
         Define the input types for this node.
 
@@ -93,7 +93,7 @@ class ImageConfigNode:
             },
         }
 
-    RETURN_TYPES: Tuple[str, ...] = ("PIPE",)
-    RETURN_NAMES: Tuple[str, ...] = ("pipe",)
+    RETURN_TYPES: tuple[str, ...] = ("PIPE",)
+    RETURN_NAMES: tuple[str, ...] = ("pipe",)
     FUNCTION: str = "execute"
     CATEGORY: str = "all-to-pipe"

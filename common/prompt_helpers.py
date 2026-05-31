@@ -4,29 +4,29 @@ All-to-Pipe prompt helpers module.
 Helper functions for working with prompt data structures.
 """
 
-from typing import Dict, Union
 from ..alltopipe_types import PositivePrompt, NegativePrompt
 
-#TODO: check template node to know how to parse the templates and classes correctly
+# TODO: check template node to know how to parse the templates and classes correctly
 
-def prompt_to_string(prompt: Union[PositivePrompt, NegativePrompt]) -> Dict[str, str]:
+
+def prompt_to_string(prompt: PositivePrompt | NegativePrompt) -> dict[str, str]:
     """
     Convert prompt object attributes into plain strings.
-    
+
     This function extracts all string attributes from a prompt object
     and returns them as a dictionary.
-    
+
     Args:
         prompt: Either a PositivePrompt or NegativePrompt instance
-        
+
     Returns:
         Dictionary mapping attribute names to their string values
-        
+
     Raises:
         ValueError: If prompt is None
     """
 
-    prompt_dict: Dict[str, str] = {}
+    prompt_dict: dict[str, str] = {}
 
     # Extract all attributes from the prompt object
     for key, value in prompt.__dict__.items():
@@ -39,16 +39,14 @@ def prompt_to_string(prompt: Union[PositivePrompt, NegativePrompt]) -> Dict[str,
     return prompt_dict
 
 
-def merge_prompts(
-    prompts: Dict[str, str], separator: str = ", "
-) -> str:
+def merge_prompts(prompts: dict[str, str], separator: str = ", ") -> str:
     """
     Merge multiple prompt attributes into a single string.
-    
+
     Args:
         prompts: Dictionary of prompt attributes
         separator: String to use when joining prompt parts
-        
+
     Returns:
         Merged prompt string
     """

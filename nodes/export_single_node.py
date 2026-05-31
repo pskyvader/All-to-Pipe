@@ -4,13 +4,13 @@ All-to-Pipe export node.
 Resolves Pipe into sampler-ready objects.
 """
 
-from typing import Dict, Any, Tuple
+from typing import Any
 from ..alltopipe_types import Pipe
 
 
 class ExportSingleNode:
 
-    elements_to_update: Dict[str, Dict[str, Any]] = {
+    elements_to_update: dict[str, dict[str, Any]] = {
         "image": {
             "attr_name": "image",  # The attribute inside ImageConfig
             "pipe_key": "image_config",  # The attribute inside Pipe
@@ -26,7 +26,7 @@ class ExportSingleNode:
         pass
 
     @staticmethod
-    def execute(pipe: Pipe, key: str) -> Tuple[Any]:
+    def execute(pipe: Pipe, key: str) -> tuple[Any, ...]:
         element = ExportSingleNode.elements_to_update[key]
 
         export_object = getattr(pipe, element["pipe_key"], None)
@@ -41,7 +41,7 @@ class ExportSingleNode:
         return (export_value,)
 
     @classmethod
-    def INPUT_TYPES(cls) -> Dict[str, Any]:
+    def INPUT_TYPES(cls) -> dict[str, Any]:
         """
         Define the input types for this node.
 
@@ -55,7 +55,7 @@ class ExportSingleNode:
             }
         }
 
-    RETURN_TYPES: Tuple[Any] = ("*",)
-    RETURN_NAMES: Tuple[str] = ("value",)
+    RETURN_TYPES: tuple[Any] = ("*",)
+    RETURN_NAMES: tuple[str] = ("value",)
     FUNCTION: str = "execute"
     CATEGORY: str = "all-to-pipe"

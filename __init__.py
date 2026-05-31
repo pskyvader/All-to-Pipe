@@ -5,7 +5,7 @@ A custom node module to build, manipulate, and export reusable generation pipeli
 containing models, LoRAs, parameters, and prompt structures.
 """
 
-from typing import Dict, Type, Any
+from typing import Any
 
 from .nodes.update_pipe_node import UpdatePipeNode
 from .nodes.positive_prompt_node import PositivePromptNode
@@ -21,7 +21,7 @@ from .nodes.export_text_node import ExportTextNode
 from .nodes.export_single_node import ExportSingleNode
 
 # Node class mappings for ComfyUI registration
-NODE_CLASS_MAPPINGS: Dict[str, Type[Any]] = {
+NODE_CLASS_MAPPINGS: dict[str, type[Any]] = {
     "AllToPipe_Update": UpdatePipeNode,
     "AllToPipe_ExportSingle": ExportSingleNode,
     "AllToPipe_PositivePrompt": PositivePromptNode,
@@ -37,7 +37,7 @@ NODE_CLASS_MAPPINGS: Dict[str, Type[Any]] = {
 }
 
 # Human-readable display name mappings
-NODE_DISPLAY_NAME_MAPPINGS: Dict[str, str] = {
+NODE_DISPLAY_NAME_MAPPINGS: dict[str, str] = {
     "AllToPipe_Update": "Update Pipe",
     "AllToPipe_ExportSingle": "Export single",
     "AllToPipe_PositivePrompt": "Positive Prompt",

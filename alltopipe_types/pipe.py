@@ -4,8 +4,7 @@ Pipe type for All-to-Pipe.
 Central container that holds all pipeline data.
 """
 
-import copy
-from typing import Optional, List, Dict, Any, Self
+from typing import Any, Self
 from .model import Model
 from .lora import LoraSpec
 from .parameters import Parameters
@@ -23,16 +22,16 @@ class Pipe:
 
     def __init__(
         self,
-        model: Optional[Model] = None,
-        loras: Optional[List[LoraSpec]] = None,
-        parameters: Optional[Parameters] = None,
-        image_config: Optional[ImageConfig] = None,
-        positive_template: Optional[Template] = None,
-        negative_template: Optional[Template] = None,
-        positive_prompt: Optional[PositivePrompt] = None,
-        negative_prompt: Optional[NegativePrompt] = None,
-        companion_model_data: Optional[Dict[str, Any]] = None,
-        companion_lora_data: Optional[List[Dict[str, Any]]] = None,
+        model: Model | None = None,
+        loras: list[LoraSpec] | None = None,
+        parameters: Parameters | None = None,
+        image_config: ImageConfig | None = None,
+        positive_template: Template | None = None,
+        negative_template: Template | None = None,
+        positive_prompt: PositivePrompt | None = None,
+        negative_prompt: NegativePrompt | None = None,
+        companion_model_data: dict[str, Any] | None = None,
+        companion_lora_data: list[dict[str, Any]] | None = None,
     ) -> None:
         """
         Initialize Pipe container.
@@ -45,17 +44,17 @@ class Pipe:
             positive_prompt: Positive prompt container
             negative_prompt: Negative prompt container
         """
-        self.model: Optional[Model] = model
-        self.loras: List[LoraSpec] = loras if loras is not None else []
-        self.parameters: Optional[Parameters] = parameters
-        self.image_config: Optional[ImageConfig] = image_config
-        self.positive_template: Optional[Template] = positive_template
-        self.negative_template: Optional[Template] = negative_template
+        self.model: Model | None = model
+        self.loras: list[LoraSpec] = loras if loras is not None else []
+        self.parameters: Parameters | None = parameters
+        self.image_config: ImageConfig | None = image_config
+        self.positive_template: Template | None = positive_template
+        self.negative_template: Template | None = negative_template
 
-        self.positive_prompt: Optional[PositivePrompt] = (
+        self.positive_prompt: PositivePrompt | None = (
             positive_prompt if positive_prompt is not None else PositivePrompt()
         )
-        self.negative_prompt: Optional[NegativePrompt] = (
+        self.negative_prompt: NegativePrompt | None = (
             negative_prompt if negative_prompt is not None else NegativePrompt()
         )
         # Companion file data from models/LoRAs
@@ -84,7 +83,6 @@ class Pipe:
                 else None
             ),
         )
-        return copy.deepcopy(self)
 
     def derive(self, **overrides: Any) -> Self:
         """

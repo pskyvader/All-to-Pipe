@@ -4,18 +4,17 @@ All-to-Pipe file helpers module.
 Helper functions for resolving model and LoRA file paths and discovering available resources.
 """
 
-from typing import Optional, List, Tuple
 import os
 
 # Cache for discovered subfolders
-_model_subfolder_cache: Optional[List[str]] = None
-_lora_subfolder_cache: Optional[List[str]] = None
+_model_subfolder_cache: list[str] | None = None
+_lora_subfolder_cache: list[str] | None = None
 
 
 def discover_model_subfolders(
     base_path: str = "models/checkpoints",
     include_root: bool = True,
-) -> List[str]:
+) -> list[str]:
     """
     Discover all subfolders in the models/checkpoints directory.
 
@@ -34,7 +33,7 @@ def discover_model_subfolders(
     if _model_subfolder_cache is not None:
         return _model_subfolder_cache
 
-    subfolders: List[str] = []
+    subfolders: list[str] = []
 
     if include_root:
         subfolders.append("")
@@ -61,7 +60,7 @@ def discover_model_subfolders(
 def discover_lora_subfolders(
     base_path: str = "models/loras",
     include_root: bool = True,
-) -> List[str]:
+) -> list[str]:
     """
     Discover all subfolders in the models/loras directory.
 
@@ -80,7 +79,7 @@ def discover_lora_subfolders(
     if _lora_subfolder_cache is not None:
         return _lora_subfolder_cache
 
-    subfolders: List[str] = []
+    subfolders: list[str] = []
 
     if include_root:
         subfolders.append("")
@@ -107,7 +106,7 @@ def discover_lora_subfolders(
 def discover_models_in_subfolder(
     subfolder: str = "",
     base_path: str = "models/checkpoints",
-) -> List[str]:
+) -> list[str]:
     """
     Discover all model files in a specific subfolder.
 
@@ -118,7 +117,7 @@ def discover_models_in_subfolder(
     Returns:
         List of model filenames, sorted alphabetically
     """
-    models: List[str] = []
+    models: list[str] = []
 
     full_path: str = os.path.join(base_path, subfolder) if subfolder else base_path
 
@@ -126,7 +125,7 @@ def discover_models_in_subfolder(
         return models
 
     # Common model extensions
-    model_extensions: Tuple[str, ...] = (".safetensors", ".ckpt", ".pt", ".pth")
+    model_extensions: tuple[str, ...] = (".safetensors", ".ckpt", ".pt", ".pth")
 
     try:
         for item in os.listdir(full_path):
@@ -142,7 +141,7 @@ def discover_models_in_subfolder(
 def discover_loras_in_subfolder(
     subfolder: str = "",
     base_path: str = "models/loras",
-) -> List[str]:
+) -> list[str]:
     """
     Discover all LoRA files in a specific subfolder.
 
@@ -188,14 +187,14 @@ def clear_discovery_cache() -> None:
 def resolve_model_path(name: str, subfolder: str) -> str:
     """
     Resolve a checkpoint model file path.
-    
+
     Args:
         name: Model filename (e.g., 'model.safetensors')
         subfolder: Subfolder within the models directory
-        
+
     Returns:
         Resolved absolute path to the model file
-        
+
     Raises:
         ValueError: If name is empty or invalid
     """
@@ -217,14 +216,14 @@ def resolve_model_path(name: str, subfolder: str) -> str:
 def resolve_lora_path(name: str, subfolder: str) -> str:
     """
     Resolve a LoRA file path.
-    
+
     Args:
         name: LoRA filename (e.g., 'lora.safetensors')
         subfolder: Subfolder within the loras directory
-        
+
     Returns:
         Resolved absolute path to the LoRA file
-        
+
     Raises:
         ValueError: If name is empty or invalid
     """
@@ -246,10 +245,10 @@ def resolve_lora_path(name: str, subfolder: str) -> str:
 def validate_file_exists(path: str) -> bool:
     """
     Check if a file exists at the given path.
-    
+
     Args:
         path: File path to check
-        
+
     Returns:
         True if file exists, False otherwise
     """

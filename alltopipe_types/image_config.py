@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Any
 import random
 import torch
 import comfy.model_management
@@ -11,9 +11,9 @@ class ImageConfig:
         height: int,
         batch_size: int,
         noise: float = 1.0,
-        color_code: Optional[str] = None,
-        image: Optional[torch.Tensor] = None,
-        latent: Optional[Dict[str, torch.Tensor | None]] = None,
+        color_code: str | None = None,
+        image: torch.Tensor | None = None,
+        latent: dict[str, torch.Tensor | None] | None = None,
     ) -> None:
         """
         Image configuration for generation.
@@ -23,9 +23,9 @@ class ImageConfig:
         self.height: int = height
         self.batch_size: int = batch_size
         self.noise: float = max(0.0, min(1.0, noise))
-        self.color_code: Optional[str] = color_code
-        self.image: Optional[torch.Tensor] = image
-        self.latent: Optional[Dict[str, torch.Tensor | None]] = latent
+        self.color_code: str | None = color_code
+        self.image: torch.Tensor | None = image
+        self.latent: dict[str, torch.Tensor | None] | None = latent
 
 
 class ImageConfigProcessor:
@@ -69,9 +69,8 @@ class ImageConfigProcessor:
 
         return image_samples.permute(0, 2, 3, 1)
 
-    @staticmethod
     def get_color_from_code(
-        color_code: Optional[str], device: str = "cpu"
+        color_code: str | None, device: str = "cpu"
     ) -> torch.Tensor:
         """
         Parses hex color and returns a normalized 3-channel RGB vector.

@@ -1,5 +1,5 @@
 import json
-from typing import Dict, Any, Tuple, List
+from typing import Any
 from pathlib import Path
 from ..common.prompt_helpers import prompt_to_string
 
@@ -20,7 +20,7 @@ class ExportTextNode:
         pass
 
     @classmethod
-    def INPUT_TYPES(cls) -> Dict[str, Any]:
+    def INPUT_TYPES(cls) -> dict[str, Any]:
         return {
             "required": {
                 "pipe": ("PIPE",),
@@ -91,7 +91,7 @@ class ExportTextNode:
         image_config: bool = True,
         prompt_text: bool = True,
         prompt_map: bool = True,
-    ) -> Tuple[
+    ) -> tuple[
         str,
         str,
         str,
@@ -128,7 +128,9 @@ class ExportTextNode:
         if not isinstance(pipe.negative_template, Template):
             raise ValueError("Pipe.negative_template must exist")
         # 1. Model Data
-        output_model_name = (Path(pipe.model.name).stem if pipe.model else "") if model else ""
+        output_model_name = (
+            (Path(pipe.model.name).stem if pipe.model else "") if model else ""
+        )
         output_model_subfolder = (
             (pipe.model.subfolder if pipe.model else "") if model else ""
         )
@@ -139,7 +141,7 @@ class ExportTextNode:
         first_lora_weight = 0.0
         if loras and pipe.loras:
             # Serializing the lora objects into a JSON string list for easy parsing elsewhere
-            lora_data: List[Dict[str, Any]] = [
+            lora_data: list[dict[str, Any]] = [
                 {
                     "name": Path(lora.name).stem,
                     "subfolder": lora.subfolder,
